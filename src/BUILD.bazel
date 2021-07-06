@@ -1,0 +1,24 @@
+cc_library(
+    name = "src",
+    srcs = [
+        "conf.h",
+        "version.h",
+        "miniacc.h",
+        "main.cpp",
+    ],
+    copts = select({
+        "//conditions:default": [
+            "-Wno-unused-parameter",
+            "-Wno-pointer-sign",
+        ],
+    }) + [
+        "-I external/com_github_vstakhov_libucl/include",
+        "-I external/com_github_vstakhov_libucl/uthash",
+        "-I external/com_github_vstakhov_libucl/src",
+        "-I external/com_github_vstakhov_libucl/klib",
+    ],
+
+    deps = [
+        "@com_github_vstakhov_libucl//:ucl",
+    ],
+)

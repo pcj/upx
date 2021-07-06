@@ -1,0 +1,101 @@
+# Description
+#    libucl - github.com/vstakhov/libucl
+
+load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
+
+config_setting(
+    name = "linux",
+    constraint_values = ["@bazel_tools//platforms:linux"],
+)
+
+config_setting(
+    name = "osx_arm64",
+    constraint_values = [
+        "@bazel_tools//platforms:osx",
+        "@bazel_tools//platforms:aarch64",
+    ],
+)
+
+config_setting(
+    name = "osx_x86_64",
+    constraint_values = [
+        "@bazel_tools//platforms:osx",
+        "@bazel_tools//platforms:x86_64",
+    ],
+)
+
+config_setting(
+    name = "windows",
+    constraint_values = ["@bazel_tools//platforms:windows"],
+)
+
+config_setting(
+    name = "android",
+    constraint_values = ["@bazel_tools//platforms:android"],
+)
+
+copy_file(
+    name = "copy_config",
+    src = select({
+        ":android": "@upx//:config.lzma-linux.h",
+        ":linux": "@upx//:config.lzma-linux.h",
+        ":osx_arm64": "@upx//:config.lzma-osx-arm64.h",
+        ":osx_x86_64": "@upx//:config.lzma-osx-x86_64.h",
+        ":windows": "@upx//:config.lzma-windows.h",
+    }),
+    out = "src/config.h",  # TODO: is this required?
+)
+
+cc_library(
+    name = "ucl",
+    srcs = [
+        "src/ucl_emitter.c",
+        "src/ucl_emitter_streamline.c",
+        "src/ucl_emitter_utils.c",
+        "src/ucl_hash.c",
+        "src/ucl_msgpack.c",
+        "src/ucl_parser.c",
+        "src/ucl_schema.c",
+        "src/ucl_sexp.c",
+        "src/ucl_util.c",
+    ],
+    hdrs = [
+        "src/mum.h",
+        "src/tree.h",
+        "src/ucl_hash.h",
+        "src/ucl_chartable.h",
+        "uthash/utlist.h",
+        "uthash/uthash.h",
+        "uthash/utstring.h",
+        "src/ucl_internal.h",
+        "include/ucl.h",
+        "klib/kvec.h",
+        "klib/khash.h",
+    ],
+    copts = select({
+        ":windows": [],
+        "//conditions:default": [
+            "-Wno-unused-parameter",
+            "-Wno-pointer-sign",
+        ],
+    }) + [
+        "-I.",
+        "-I external/com_github_vstakhov_libucl/include",
+        "-I external/com_github_vstakhov_libucl/uthash",
+        "-I external/com_github_vstakhov_libucl/src",
+        "-I external/com_github_vstakhov_libucl/klib",
+    ],
+    defines = select({
+        ":windows": ["LZMA_API_STATIC"],
+        "//conditions:default": [],
+    }),
+    linkopts = select({
+        ":android": [],
+        "//conditions:default": ["-lpthread"],
+    }),
+    linkstatic = select({
+        ":windows": True,
+        "//conditions:default": False,
+    }),
+    visibility = ["//visibility:public"],
+)
